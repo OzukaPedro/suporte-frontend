@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SidebarDashboard } from "./(private)/_components/sidebar";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -13,7 +14,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <SidebarDashboard>{children}</SidebarDashboard>
+      </body>
     </html>
   );
 }
