@@ -2,10 +2,14 @@
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ChevronDown, ChevronUp, Search } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Menu from "../../_components/menu";
 
-interface Props {
+interface StoreProps {
+  id: string;
+  name: string;
+}
+interface AcessProps {
   loja: "mforce" | "mkommerce";
   marca: string;
   url: string;
@@ -22,86 +26,48 @@ interface Props {
     usuarioFtp: string;
     senhaFtp: string;
   };
+  ftpAcessoCliente: {
+    usuarioFtpCliente: string;
+    senhaFtpCliente: string;
+  }
 }
 
-export default function MKommerceAccess() {
-  const acessos: Props[] = [
-    {
-      loja: "mforce",
-      marca: "Polo From England",
-      url: "https://polofromengland.com.br/painel",
-      painelAcesso: {
-        usuarioPainel: "suporte@marknet.com.br",
-        senhaPainel: "123456",
-      },
-      bancoAcesso: {
-        usuarioBanco: "polofrom_u",
-        senhaBanco: "11111111",
-      },
-      ftpAcesso: {
-        hostFtp: "ftp.polofromengland.com.br",
-        usuarioFtp: "polofrom_f",
-        senhaFtp: "********",
-      },
-    },
-    {
-      loja: "mkommerce",
-      marca: "Champion Brasil",
-      url: "https://championbrasil.com.br/painel",
-      painelAcesso: {
-        usuarioPainel: "suporte@marknet.com.br",
-        senhaPainel: "654321",
-      },
-      bancoAcesso: {
-        usuarioBanco: "champion_u",
-        senhaBanco: "22222222",
-      },
-      ftpAcesso: {
-        hostFtp: "ftp.championbrasil.com.br",
-        usuarioFtp: "champion_f",
-        senhaFtp: "********",
-      },
-    },
-    {
-      loja: "mkommerce",
-      marca: "Kesttou",
-      url: "https://kesttou.com.br/painel",
-      painelAcesso: {
-        usuarioPainel: "admin@marknet.com.br",
-        senhaPainel: "kesttou123",
-      },
-      bancoAcesso: {
-        usuarioBanco: "kesttou_u",
-        senhaBanco: "44444444",
-      },
-      ftpAcesso: {
-        hostFtp: "ftp.kesttou.com.br",
-        usuarioFtp: "kesttou_f",
-        senhaFtp: "********",
-      },
-    },
-  ];
 
+export default function AccessPage() {
+  
+
+  const [lojas, setLojas] = useState<StoreProps[]>([]);
+  const [acessos, setAcessos] = useState<AcessProps[]>([]);
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
+  // Simula busca no banco (substitua pelo seu fetch real)
+  useEffect(() => {
+  fetch("http://localhost:3000/api/stores")
+    .then((response) => response.json())
+    .then((data) => setLojas(data));
+    console.log(lojas)
+}, []);
   const toggleOpen = (index: number) => {
     setOpenIndex(openIndex === index ? null : index);
   };
 
-  const acessosFiltrados = acessos.filter(
-    (item) =>
-      item.loja === "mkommerce" &&
-      item.marca.toLowerCase().includes(searchTerm.toLowerCase())
+  const acessosFiltrados = acessos.filter((item) =>
+    item.marca.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <>
-      <Menu />
+      <Menu options={
+        lojas.map((loja) => ({
+          label: loja.name,
+          href: `/${loja.id}`,
+        }))
+      } />
 
       <Card className="shadow-lg border mt-10">
-        <CardHeader className="text-lg font-semibold text-gray-800">
-          Acessos Mkommerce
+        <CardHeader className="text-lg font-semibold text-gray-800 capitalize">
+          Acessos
         </CardHeader>
 
         <CardContent className="space-y-6">
@@ -125,9 +91,7 @@ export default function MKommerceAccess() {
                   key={index}
                   className="border rounded-xl shadow-sm overflow-hidden bg-white"
                 >
-                  {/* Cabeçalho */}
                   <div className="flex justify-between items-center p-5 px-8 gap-4 hover:bg-gray-50 transition-colors">
-                    {/* Nome */}
                     <div className="flex flex-col leading-3 flex-1">
                       <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
                         Nome
@@ -135,7 +99,6 @@ export default function MKommerceAccess() {
                       <p className="ml-1 text-gray-800">{item.marca}</p>
                     </div>
 
-                    {/* URL */}
                     <div className="flex flex-col leading-3 flex-1">
                       <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
                         URL
@@ -149,19 +112,16 @@ export default function MKommerceAccess() {
                       </a>
                     </div>
 
-                    {/* Botão toggle */}
                     <div className="flex justify-end flex-1">
                       <button
                         onClick={() => toggleOpen(index)}
                         className="rounded-lg px-3 py-2 hover:bg-gray-100 transition"
-                        aria-label="Mostrar detalhes"
                       >
                         {openIndex === index ? <ChevronUp /> : <ChevronDown />}
                       </button>
                     </div>
                   </div>
 
-                  {/* Conteúdo expandido */}
                   <div
                     className={`transition-all duration-300 ease-in-out overflow-hidden border-t bg-gray-50 ${
                       openIndex === index
@@ -176,14 +136,14 @@ export default function MKommerceAccess() {
                           Painel
                         </h4>
                         <div className="border text-sm border-gray-300 rounded-md p-3 bg-white space-y-1 w-fit">
-                          <div className="flex gap-2">
-                            <span className="font-medium">User:</span>
-                            <p>{item.painelAcesso.usuarioPainel}</p>
-                          </div>
-                          <div className="flex gap-2">
-                            <span className="font-medium">Password:</span>
-                            <p>{item.painelAcesso.senhaPainel}</p>
-                          </div>
+                          <p>
+                            <span className="font-medium">User:</span>{" "}
+                            {item.painelAcesso.usuarioPainel}
+                          </p>
+                          <p>
+                            <span className="font-medium">Password:</span>{" "}
+                            {item.painelAcesso.senhaPainel}
+                          </p>
                         </div>
                       </section>
 
@@ -193,14 +153,14 @@ export default function MKommerceAccess() {
                           Banco
                         </h4>
                         <div className="border text-sm border-gray-300 rounded-md p-3 bg-white space-y-1 w-fit">
-                          <div className="flex gap-2">
-                            <span className="font-medium">User:</span>
-                            <p>{item.bancoAcesso.usuarioBanco}</p>
-                          </div>
-                          <div className="flex gap-2">
-                            <span className="font-medium">Password:</span>
-                            <p>{item.bancoAcesso.senhaBanco}</p>
-                          </div>
+                          <p>
+                            <span className="font-medium">User:</span>{" "}
+                            {item.bancoAcesso.usuarioBanco}
+                          </p>
+                          <p>
+                            <span className="font-medium">Password:</span>{" "}
+                            {item.bancoAcesso.senhaBanco}
+                          </p>
                         </div>
                       </section>
 
@@ -210,18 +170,18 @@ export default function MKommerceAccess() {
                           FTP
                         </h4>
                         <div className="border text-sm border-gray-300 rounded-md p-3 bg-white space-y-1 w-fit">
-                          <div className="flex gap-2">
-                            <span className="font-medium">Host:</span>
-                            <p>{item.ftpAcesso.hostFtp}</p>
-                          </div>
-                          <div className="flex gap-2">
-                            <span className="font-medium">User:</span>
-                            <p>{item.ftpAcesso.usuarioFtp}</p>
-                          </div>
-                          <div className="flex gap-2">
-                            <span className="font-medium">Password:</span>
-                            <p>{item.ftpAcesso.senhaFtp}</p>
-                          </div>
+                          <p>
+                            <span className="font-medium">Host:</span>{" "}
+                            {item.ftpAcesso.hostFtp}
+                          </p>
+                          <p>
+                            <span className="font-medium">User:</span>{" "}
+                            {item.ftpAcesso.usuarioFtp}
+                          </p>
+                          <p>
+                            <span className="font-medium">Password:</span>{" "}
+                            {item.ftpAcesso.senhaFtp}
+                          </p>
                         </div>
                       </section>
                     </div>
