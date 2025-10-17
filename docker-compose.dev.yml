@@ -1,0 +1,13 @@
+services:
+  web:
+    build:
+      context: .
+    container_name: suport_frontend
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: pnpm dev

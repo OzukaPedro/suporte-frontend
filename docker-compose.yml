@@ -1,0 +1,11 @@
+services:
+  web:
+    build:
+      context: .
+    container_name: suport_frontend
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    command: pnpm start
