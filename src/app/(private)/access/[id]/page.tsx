@@ -4,66 +4,75 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ChevronDown, ChevronUp, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import Menu from "../../_components/menu";
+import { useParams } from "next/navigation";
 
+interface AccessProps {
+  id: string;
+  name: string;
+  username: string;
+  password: string;
+}
 interface StoreProps {
   id: string;
   name: string;
+  baseUrl: string;
+  accesses: AccessProps[];
 }
-interface AcessProps {
-  loja: "mforce" | "mkommerce";
-  marca: string;
-  url: string;
-  painelAcesso: {
-    usuarioPainel: string;
-    senhaPainel: string;
-  };
-  bancoAcesso: {
-    usuarioBanco: string;
-    senhaBanco: string;
-  };
-  ftpAcesso: {
-    hostFtp: string;
-    usuarioFtp: string;
-    senhaFtp: string;
-  };
-  ftpAcessoCliente: {
-    usuarioFtpCliente: string;
-    senhaFtpCliente: string;
-  }
-}
-
 
 export default function AccessPage() {
-  
+  const params = useParams();
+  // aqui o [id] representa o marketplaceId (ex: mkommerce)
+  const marketplaceId = (params as { id?: string })?.id ?? "";
 
   const [lojas, setLojas] = useState<StoreProps[]>([]);
-  const [acessos, setAcessos] = useState<AcessProps[]>([]);
+  const [acessos, setAcessos] = useState<AccessProps[]>([]);
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Simula busca no banco (substitua pelo seu fetch real)
+  // busca acessos da store atual (quando storeId estiver disponível)
   useEffect(() => {
-  fetch("http://localhost:3000/api/stores")
-    .then((response) => response.json())
-    .then((data) => setLojas(data));
-    console.log(lojas)
-}, []);
+    if (!marketplaceId) return;
+
+    const sortAccesses = (accesses: AccessProps[] = []) => {
+      const order = ["painel", "ftp", "banco"];
+      return [...accesses].sort((a, b) => {
+        const ai = order.findIndex((k) => a.name.toLowerCase().includes(k));
+        const bi = order.findIndex((k) => b.name.toLowerCase().includes(k));
+        const aIndex = ai === -1 ? order.length : ai;
+        const bIndex = bi === -1 ? order.length : bi;
+        return aIndex - bIndex;
+      });
+    };
+
+    // chama o endpoint que você criou no Nest: GET /api/stores/marketplace/:marketplaceId
+    fetch(
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/stores/marketplace/${marketplaceId}`
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        const items = Array.isArray(data)
+          ? data
+          : data.stores ?? data.accesses ?? [];
+        // se for array de stores, ordena os accesses de cada store
+        const mapped =
+          Array.isArray(items) && items.length > 0 && items[0].accesses
+            ? (items as any[]).map((store) => ({
+                ...store,
+                accesses: sortAccesses(store.accesses),
+              }))
+            : items;
+        setLojas(mapped as StoreProps[]);
+      })
+      .catch(() => setLojas([]));
+  }, [marketplaceId]);
+
   const toggleOpen = (index: number) => {
     setOpenIndex(openIndex === index ? null : index);
   };
 
-  const acessosFiltrados = acessos.filter((item) =>
-    item.marca.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   return (
     <>
-      <Menu options={
-        lojas.map((loja) => ({
-          label: loja.name,
-          href: `/${loja.id}`,
-        }))
-      } />
+      <Menu />
 
       <Card className="shadow-lg border mt-10">
         <CardHeader className="text-lg font-semibold text-gray-800 capitalize">
@@ -85,37 +94,34 @@ export default function AccessPage() {
 
           {/* Lista de acessos */}
           <ul className="space-y-4">
-            {acessosFiltrados.length > 0 ? (
-              acessosFiltrados.map((item, index) => (
+            {lojas.length > 0 ? (
+              lojas.map((item, index) => (
                 <li
-                  key={index}
+                  key={item.id}
                   className="border rounded-xl shadow-sm overflow-hidden bg-white"
                 >
                   <div className="flex justify-between items-center p-5 px-8 gap-4 hover:bg-gray-50 transition-colors">
-                    <div className="flex flex-col leading-3 flex-1">
+                    <div>
                       <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
                         Nome
                       </span>
-                      <p className="ml-1 text-gray-800">{item.marca}</p>
+                      <p className="ml-1 text-gray-800">{item.name}</p>
                     </div>
-
-                    <div className="flex flex-col leading-3 flex-1">
+                    <div>
                       <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                        URL
+                        Url
                       </span>
-                      <a
-                        href={item.url}
-                        target="_blank"
-                        className="ml-1 text-blue-600 hover:underline break-all"
-                      >
-                        {item.url}
-                      </a>
+                      <p className="ml-1 text-blue-600 hover:underline ">
+                        {item.baseUrl}
+                      </p>
                     </div>
 
-                    <div className="flex justify-end flex-1">
+                    <div className="flex justify-end ">
                       <button
                         onClick={() => toggleOpen(index)}
                         className="rounded-lg px-3 py-2 hover:bg-gray-100 transition"
+                        aria-expanded={openIndex === index}
+                        aria-controls={`access-${item.id}`}
                       >
                         {openIndex === index ? <ChevronUp /> : <ChevronDown />}
                       </button>
@@ -123,67 +129,34 @@ export default function AccessPage() {
                   </div>
 
                   <div
+                    id={`access-${item.id}`}
                     className={`transition-all duration-300 ease-in-out overflow-hidden border-t bg-gray-50 ${
                       openIndex === index
-                        ? "opacity-100 max-h-[600px] p-6"
+                        ? "opacity-100 max-h-[200px] p-6"
                         : "opacity-0 max-h-0 p-0"
                     }`}
                   >
-                    <div className="flex flex-col md:flex-row gap-6 justify-between">
-                      {/* Painel */}
-                      <section className="flex-1">
-                        <h4 className="text-sm font-bold mb-2 text-gray-700">
-                          Painel
-                        </h4>
-                        <div className="border text-sm border-gray-300 rounded-md p-3 bg-white space-y-1 w-fit">
+                    <div className="flex gap-4 justify-around">
+                      {item.accesses.map((access) => (
+                        <div
+                          key={access.id}
+                          className="p-4 bg-white rounded-lg shadow-sm border flex flex-col flex-1 text-sm"
+                        >
+                          <label className="font-bold">{access.name}</label>
                           <p>
-                            <span className="font-medium">User:</span>{" "}
-                            {item.painelAcesso.usuarioPainel}
+                            <span className="font-semibold text-gray-600">
+                              Usuário:
+                            </span>{" "}
+                            {access.username}
                           </p>
                           <p>
-                            <span className="font-medium">Password:</span>{" "}
-                            {item.painelAcesso.senhaPainel}
-                          </p>
-                        </div>
-                      </section>
-
-                      {/* Banco */}
-                      <section className="flex-1">
-                        <h4 className="text-sm font-bold mb-2 text-gray-700">
-                          Banco
-                        </h4>
-                        <div className="border text-sm border-gray-300 rounded-md p-3 bg-white space-y-1 w-fit">
-                          <p>
-                            <span className="font-medium">User:</span>{" "}
-                            {item.bancoAcesso.usuarioBanco}
-                          </p>
-                          <p>
-                            <span className="font-medium">Password:</span>{" "}
-                            {item.bancoAcesso.senhaBanco}
+                            <span className="font-semibold text-gray-600">
+                              Senha:
+                            </span>{" "}
+                            {access.password}
                           </p>
                         </div>
-                      </section>
-
-                      {/* FTP */}
-                      <section className="flex-1">
-                        <h4 className="text-sm font-bold mb-2 text-gray-700">
-                          FTP
-                        </h4>
-                        <div className="border text-sm border-gray-300 rounded-md p-3 bg-white space-y-1 w-fit">
-                          <p>
-                            <span className="font-medium">Host:</span>{" "}
-                            {item.ftpAcesso.hostFtp}
-                          </p>
-                          <p>
-                            <span className="font-medium">User:</span>{" "}
-                            {item.ftpAcesso.usuarioFtp}
-                          </p>
-                          <p>
-                            <span className="font-medium">Password:</span>{" "}
-                            {item.ftpAcesso.senhaFtp}
-                          </p>
-                        </div>
-                      </section>
+                      ))}
                     </div>
                   </div>
                 </li>
