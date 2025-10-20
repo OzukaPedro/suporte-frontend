@@ -25,18 +25,20 @@ export default function AccessPage() {
 
   // Simula busca no banco (substitua pelo seu fetch real)
   useEffect(() => {
-    fetch("http://localhost:3000/api/marketplaces")
+    fetch("http://localhost:3000/api/marketplaces", {
+      headers: {
+        "api-key": "secretkey",
+        "Content-Type": "application/json",
+      },
+    })
       .then((response) => response.json())
-      .then((data) => setLojas(data));
+      .then((data) => setLojas(data))
+      .catch((error) => console.error("Erro ao buscar marketplaces:", error));
   }, []);
+
   return (
     <>
-      <TypedMenu
-        options={lojas.map((loja) => ({
-          label: loja.name,
-          href: `/${loja.id}`, // <- alterado: agora aponta para /access/[id]
-        }))}
-      />
+      <Menu />
     </>
   );
 }
