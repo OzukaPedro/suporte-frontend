@@ -49,9 +49,13 @@ export default function Menu({ options: propsOptions }: MenuProps) {
         if (!mounted) return;
 
         if (!res.ok) {
-          // tenta sem api-key como fallback
+          // tenta novamente com os mesmos headers (evita erro por falta de header)
           const fallbackRes = await fetch(`${base}/marketplaces`, {
             signal: controller.signal,
+            headers: {
+              "Content-Type": "application/json",
+              "api-key": apiKey,
+            },
           });
           if (!fallbackRes.ok) {
             setOptions([]);
